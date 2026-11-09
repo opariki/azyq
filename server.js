@@ -3,13 +3,13 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sanitizeState } from "./public/js/model.js";
+import { sanitizeState } from "./model.js";
 
 const base = path.dirname(fileURLToPath(import.meta.url));
-const root = path.join(base, "public");
+const root = base;
 const file = path.join(base, "data", "state.json");
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript" };
-const PUBLIC = ["index.html", "styles.css", "js"];
+const PUBLIC = ["index.html", "styles.css", "main.js", "model.js", "store.js", "i18n.js"];
 
 http.createServer(async (req, res) => {
   const send = (code, body, type = "application/json") => { res.writeHead(code, { "Content-Type": type }); res.end(body); };
