@@ -3,10 +3,11 @@ import http from "node:http";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { sanitizeState } from "./js/model.js";
+import { sanitizeState } from "./public/js/model.js";
 
-const root = path.dirname(fileURLToPath(import.meta.url));
-const file = path.join(root, "data", "state.json");
+const base = path.dirname(fileURLToPath(import.meta.url));
+const root = path.join(base, "public");
+const file = path.join(base, "data", "state.json");
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript" };
 const PUBLIC = ["index.html", "styles.css", "js"];
 
