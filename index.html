@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AZYQ — Smart Pantry</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="app">
+
+<aside class="sidebar">
+  <div class="brand">AZ<span>Y</span>Q.</div>
+  <div class="brand-sub">SMART PANTRY</div>
+
+  <div class="nav-label" data-t="workspace">WORKSPACE</div>
+
+  <nav class="nav">
+    <button type="button" class="active" data-page="overview">
+      <span class="nav-icon">⌂</span><span data-t="overview">Обзор</span>
+    </button>
+    <button type="button" data-page="pantry">
+      <span class="nav-icon">▦</span><span data-t="pantry">Мои запасы</span>
+    </button>
+    <button type="button" data-page="shopping">
+      <span class="nav-icon">☷</span><span data-t="shopping">Покупки</span>
+    </button>
+    <button type="button" data-page="waste">
+      <span class="nav-icon">↗</span><span data-t="waste">Статистика</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <strong>AZYQ</strong><br>
+    Less waste. More value.<br>
+    <span>Version 2.2 · Kazakhstan</span>
+  </div>
+</aside>
+
+<main>
+  <header class="topbar">
+    <div class="breadcrumb">AZYQ / <strong id="breadcrumb">Обзор</strong></div>
+    <div class="top-actions">
+      <select class="lang" id="language" aria-label="Language">
+        <option value="ru">RU</option>
+        <option value="kk">KZ</option>
+        <option value="en">EN</option>
+      </select>
+      <div class="avatar">A</div>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- OVERVIEW -->
+
+    <section class="page active" id="overview">
+      <div class="eyebrow" data-t="dashboard">ВАШ ДОМ</div>
+
+      <div class="page-heading">
+        <div>
+          <h1 data-t="welcome">Всё под контролем.</h1>
+          <p class="page-description" data-t="welcomeSub">
+            Ваши продукты, запасы и сроки годности в одном месте.
+          </p>
+        </div>
+        <button type="button" class="primary" data-action="open-modal" data-t="addProduct">+ Добавить продукт</button>
+      </div>
+
+      <div class="reminder" id="reminder" hidden></div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-top">
+            <span data-t="totalProducts">Всего продуктов</span>
+            <span class="stat-icon">▦</span>
+          </div>
+          <div class="stat-number" id="totalCount">0</div>
+          <div class="stat-note" data-t="inPantry">В ваших запасах</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-top">
+            <span data-t="expiring">Скоро истекает</span>
+            <span class="stat-icon">◷</span>
+          </div>
+          <div class="stat-number" id="expiringCount">0</div>
+          <div class="stat-note" data-t="nextThree">В ближайшие 3 дня</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-top">
+            <span data-t="expired">Просрочено</span>
+            <span class="stat-icon">!</span>
+          </div>
+          <div class="stat-number" id="expiredCount">0</div>
+          <div class="stat-note" data-t="needsAttention">Требует внимания</div>
+        </div>
+
+        <div class="stat">
+          <div class="stat-top">
+            <span data-t="saved">Использовано</span>
+            <span class="stat-icon">✓</span>
+          </div>
+          <div class="stat-number" id="usedCount">0</div>
+          <div class="stat-note" data-t="usedTotal">Всего использовано</div>
+        </div>
+      </div>
+
+      <div class="dashboard-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h2 data-t="attentionTitle">Требуют внимания</h2>
+            <span data-t="priority">По приоритету</span>
+          </div>
+          <div class="expiry-list" id="attentionList"></div>
+        </div>
+
+        <div>
+          <div class="quick-card">
+            <div class="eyebrow" data-t="smartTip">УМНАЯ ПОДСКАЗКА</div>
+            <h3 data-t="tipTitle">Сначала используйте то, что уже есть.</h3>
+            <p data-t="tipText">Проверяйте ближайшие сроки годности перед следующей покупкой.</p>
+            <button type="button" data-page="pantry" data-t="viewPantry">Посмотреть запасы →</button>
+          </div>
+          <div class="tip">
+            <h3 data-t="dailyTip">Принцип AZYQ</h3>
+            <p data-t="dailyText">Планирование начинается с холодильника, а не со списка покупок. Это помогает избежать повторных покупок и лишних расходов.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel section-panel">
+        <div class="panel-head">
+          <h2 data-t="recent">Недавно добавленные</h2>
+          <button type="button" class="secondary" data-page="pantry" data-t="allProducts">Все продукты →</button>
+        </div>
+        <div class="product-grid" id="recentProducts"></div>
+      </div>
+    </section>
+
+    <!-- PANTRY -->
+
+    <section class="page" id="pantry">
+      <div class="eyebrow" data-t="inventory">ЗАПАСЫ</div>
+      <div class="page-heading">
+        <div>
+          <h1 data-t="pantryTitle">Мои запасы.</h1>
+          <p class="page-description" data-t="pantrySub">Все продукты, которые сейчас есть дома.</p>
+        </div>
+        <button type="button" class="primary" data-action="open-modal" data-t="addProduct">+ Добавить продукт</button>
+      </div>
+
+      <div class="panel">
+        <div class="toolbar">
+          <input id="search" class="search" type="search" data-ph="search" placeholder="Поиск продуктов...">
+          <select id="categoryFilter" class="filter">
+            <option value="all" data-t="allCategories">Все категории</option>
+            <option value="dairy" data-t="dairy">Молочные</option>
+            <option value="vegetables" data-t="vegetables">Овощи</option>
+            <option value="fruits" data-t="fruits">Фрукты</option>
+            <option value="meat" data-t="meat">Мясо</option>
+            <option value="other" data-t="other">Другое</option>
+          </select>
+          <select id="sortFilter" class="filter">
+            <option value="date" data-t="sortDate">По сроку годности</option>
+            <option value="name" data-t="sortName">По названию</option>
+            <option value="new" data-t="sortNew">Сначала новые</option>
+          </select>
+        </div>
+        <div class="product-grid" id="pantryProducts"></div>
+      </div>
+    </section>
+
+    <!-- SHOPPING -->
+
+    <section class="page" id="shopping">
+      <div class="eyebrow" data-t="eyShopping">SHOPPING</div>
+      <div class="page-heading">
+        <div>
+          <h1 data-t="shoppingTitle">Список покупок.</h1>
+          <p class="page-description" data-t="shoppingSub">Покупайте только то, чего действительно не хватает.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="toolbar">
+          <input id="shoppingInput" class="search" data-ph="shoppingPlaceholder" placeholder="Например, молоко...">
+          <button type="button" class="primary" data-action="add-shopping" data-t="addToList">Добавить</button>
+        </div>
+        <div class="shopping-list" id="shoppingList"></div>
+      </div>
+    </section>
+
+    <!-- WASTE -->
+
+    <section class="page" id="waste">
+      <div class="eyebrow" data-t="eyWaste">WASTE TRACKER</div>
+      <div class="page-heading">
+        <div>
+          <h1 data-t="wasteTitle">Меньше отходов.</h1>
+          <p class="page-description" data-t="wasteSub">История использованных и списанных продуктов.</p>
+        </div>
+      </div>
+
+      <div class="stats">
+        <div class="stat">
+          <div class="stat-top"><span data-t="used">Использовано</span></div>
+          <div class="stat-number" id="wasteUsed">0</div>
+          <div class="stat-note" data-t="usedNote">Продуктов отмечено</div>
+        </div>
+        <div class="stat">
+          <div class="stat-top"><span data-t="discarded">Списано</span></div>
+          <div class="stat-number" id="wasteDiscarded">0</div>
+          <div class="stat-note" data-t="discardedNote">Продуктов списано</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2 data-t="history">История действий</h2></div>
+        <div class="expiry-list" id="historyList"></div>
+      </div>
+    </section>
+
+  </div>
+</main>
+</div>
+
+<!-- ADD PRODUCT MODAL -->
+
+<div class="modal-backdrop" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 data-t="newProduct">Новый продукт</h2>
+      <button type="button" class="close" data-action="close-modal" aria-label="Close">×</button>
+    </div>
+
+    <form id="productForm">
+      <div class="chips" id="presets"></div>
+
+      <div class="form-group">
+        <label data-t="productName">Название продукта</label>
+        <input id="productName" required maxlength="60" data-ph="productNamePh" placeholder="Например, Молоко">
+      </div>
+
+      <div class="form-group">
+        <label data-t="category">Категория</label>
+        <select id="productCategory" required>
+          <option value="dairy" data-t="dairy">Молочные</option>
+          <option value="vegetables" data-t="vegetables">Овощи</option>
+          <option value="fruits" data-t="fruits">Фрукты</option>
+          <option value="meat" data-t="meat">Мясо</option>
+          <option value="other" data-t="other">Другое</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label data-t="quantity">Количество</label>
+        <input id="productQuantity" type="number" min="0.01" max="9999" step="0.01" value="1" required>
+      </div>
+
+      <div class="form-group">
+        <label data-t="unit">Единица измерения</label>
+        <select id="productUnit">
+          <option value="pcs" data-t="unitPcs">шт.</option>
+          <option value="kg" data-t="unitKg">кг</option>
+          <option value="g" data-t="unitG">г</option>
+          <option value="l" data-t="unitL">л</option>
+          <option value="ml" data-t="unitMl">мл</option>
+          <option value="pack" data-t="unitPack">уп.</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label data-t="expiry">Срок годности</label>
+        <input id="productExpiry" type="date" required lang="ru">
+      </div>
+
+      <button class="primary" type="submit" data-t="saveProduct">Сохранить продукт</button>
+      <p class="notice" data-t="expiryNotice">Указывайте дату с упаковки. AZYQ использует её для напоминаний о сроках.</p>
+    </form>
+  </div>
+</div>
+
+<dialog id="confirmDlg">
+  <p id="confirmText"></p>
+  <form method="dialog" class="row">
+    <button class="secondary" value="no" data-t="confirmNo">Отмена</button>
+    <button class="primary" value="yes" data-t="confirmYes">Подтвердить</button>
+  </form>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
