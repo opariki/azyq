@@ -494,3 +494,16 @@ dialog{border:1px solid var(--line);border-radius:var(--radius);padding:22px;max
 dialog::backdrop{background:#292b2755}
 dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 
+
+/* family */
+.family-btn{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:8px 14px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.family-btn.on::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--green);margin-right:7px}
+.family-note{color:var(--muted);font-size:13px;margin-bottom:14px}
+.family-code{font-family:"DM Sans",monospace;font-size:30px;font-weight:700;letter-spacing:3px;text-align:center;background:var(--green-bg);border-radius:10px;padding:16px;margin-bottom:10px;user-select:all}
+.family-status{text-align:center;font-size:13px;margin-bottom:14px;color:var(--green)}
+.family-status.offline{color:var(--orange)}
+.family-actions{display:flex;gap:10px;flex-wrap:wrap}
+.family-actions .secondary{flex:1}
+.family-or{text-align:center;color:var(--muted);font-size:12px;margin:14px 0}
+.family-btn:focus-visible,.family-actions .secondary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+@media(max-width:760px){.top-actions{gap:8px}.family-btn{padding:7px 11px}}

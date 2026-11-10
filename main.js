@@ -160,7 +160,39 @@ function applyLang() {
   document.querySelectorAll("[data-t]").forEach(el => { const k = /** @type {HTMLElement} */ (el).dataset.t; if (translations[lang][k]) el.textContent = translations[lang][k]; });
   document.querySelectorAll("[data-ph]").forEach(el => { const k = /** @type {HTMLElement} */ (el).dataset.ph; if (translations[lang][k]) /** @type {HTMLInputElement} */ (el).placeholder = translations[lang][k]; });
   $("presets").innerHTML = PRESETS.map(p => `<button type="button" class="chip" data-action="preset" data-key="${p.key}">${esc(t("ing_" + p.key))}</button>`).join("");
-  render();
+  render(); renderFamily();
+}
+
+/* ---------- family (shared cloud state) ---------- */
+function renderFamily() {
+  const code = store.getFamily(), st = store.getStatus();
+  $("familyBtn").classList.toggle("on", !!code);
+  $("familyOut").hidden = !code;
+  $("familyIn").hidden = !!code;
+  if (!code) return;
+  $("familyCode").textContent = store.formatCode(code);
+  $("familyStatus").textContent = t(st === "offline" ? "familyOffline" : "familySynced");
+  $("familyStatus").className = "family-status " + st;
+}
+store.setHandler(kind => {
+  if (kind === "remote" || kind === "conflict") { render(); toast(t(kind === "conflict" ? "familyConflict" : "familyUpdated")); }
+  else if (kind === "gone") { toast(t("familyGone")); }
+  renderFamily();
+});
+async function doCreate(btn) {
+  btn.disabled = true;
+  try { await store.createFamily(); renderFamily(); toast(t("familyCreated")); }
+  catch (e) { toast(t("familyUnavailable")); }
+  btn.disabled = false;
+}
+async function doJoin(btn) {
+  const code = store.normalizeCode(/** @type {HTMLInputElement} */ ($("familyJoinInput")).value);
+  if (code.length !== 8) return toast(t("familyNotFound"));
+  if (!(await ask(t("familyJoinConfirm")))) return;
+  btn.disabled = true;
+  try { await store.joinFamily(code); render(); renderFamily(); toast(t("familyJoined")); }
+  catch (e) { toast(t(e instanceof Error && e.message === "not_found" ? "familyNotFound" : "familyUnavailable")); }
+  btn.disabled = false;
 }
 
 /* ---------- reminders (Notification API, once per day) ---------- */
@@ -190,6 +222,14 @@ document.addEventListener("click", e => {
     /** @type {HTMLInputElement} */ ($("productCategory")).value = p.category;
     /** @type {HTMLInputElement} */ ($("productUnit")).value = p.unit;
     /** @type {HTMLInputElement} */ ($("productExpiry")).value = dateOffset(p.days);
+  } else if (action === "open-family") { renderFamily(); $("familyModal").classList.add("open"); }
+  else if (action === "close-family") $("familyModal").classList.remove("open");
+  else if (action === "create-family") doCreate(/** @type {HTMLButtonElement} */ (btn));
+  else if (action === "join-family") doJoin(/** @type {HTMLButtonElement} */ (btn));
+  else if (action === "leave-family") ask(t("familyLeaveConfirm")).then(ok => { if (ok) { store.leaveFamily(); renderFamily(); toast(t("familyLeft")); } });
+  else if (action === "copy-family") {
+    const c = store.formatCode(store.getFamily());
+    (navigator.clipboard ? navigator.clipboard.writeText(c).then(() => toast(t("familyCopied"))) : Promise.reject()).catch(() => toast(c));
   } else if (action === "notify") Notification.requestPermission().then(r => { render(); if (r === "granted") { toast(t("remindOn")); notifyDue(); } });
 });
 document.addEventListener("change", e => {
@@ -202,6 +242,7 @@ function addShop() {
   input.value = ""; addToShopping([name]);
 }
 $("productForm").addEventListener("submit", submitProduct);
+$("familyModal").addEventListener("click", e => { if (/** @type {HTMLElement} */ (e.target).id === "familyModal") $("familyModal").classList.remove("open"); });
 $("modal").addEventListener("click", e => { if (/** @type {HTMLElement} */ (e.target).id === "modal") $("modal").classList.remove("open"); });
 ["search", "categoryFilter", "sortFilter"].forEach(id => $(id).addEventListener(id === "search" ? "input" : "change", renderPantry));
 $("shoppingInput").addEventListener("keydown", e => { if (e.key === "Enter") addShop(); });

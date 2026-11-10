@@ -34,7 +34,7 @@
   <div class="sidebar-bottom">
     <strong>AZYQ</strong><br>
     Less waste. More value.<br>
-    <span>Version 2.4 · Kazakhstan</span>
+    <span>Version 2.5 · Kazakhstan</span>
   </div>
 </aside>
 
@@ -42,6 +42,7 @@
   <header class="topbar">
     <div class="breadcrumb">AZYQ / <strong id="breadcrumb">Обзор</strong></div>
     <div class="top-actions">
+      <button type="button" class="family-btn" id="familyBtn" data-action="open-family" data-t="family">Семья</button>
       <select class="lang" id="language" aria-label="Language">
         <option value="ru">RU</option>
         <option value="kk">KZ</option>
@@ -280,6 +281,36 @@
       <button class="primary" type="submit" data-t="saveProduct">Сохранить продукт</button>
       <p class="notice" data-t="expiryNotice">Указывайте дату с упаковки. AZYQ использует её для напоминаний о сроках.</p>
     </form>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="familyModal">
+  <div class="modal">
+    <div class="modal-head">
+      <h2 data-t="familyTitle">Семья</h2>
+      <button type="button" class="close" data-action="close-family" aria-label="Close">×</button>
+    </div>
+
+    <div id="familyOut" hidden>
+      <p class="family-note" data-t="familySyncNote">Все, у кого есть этот код, видят одни и те же продукты и покупки.</p>
+      <div class="family-code" id="familyCode"></div>
+      <p class="family-status" id="familyStatus"></p>
+      <div class="family-actions">
+        <button type="button" class="secondary" data-action="copy-family" data-t="familyCopy">Скопировать код</button>
+        <button type="button" class="secondary" data-action="leave-family" data-t="familyLeave">Выйти из семьи</button>
+      </div>
+    </div>
+
+    <div id="familyIn">
+      <p class="family-note" data-t="familyIntro">Создайте семью, чтобы продукты и покупки были общими на всех устройствах.</p>
+      <button type="button" class="primary" data-action="create-family" data-t="familyCreate">Создать семью</button>
+      <div class="family-or" data-t="familyOr">или</div>
+      <div class="form-group">
+        <label for="familyJoinInput" data-t="familyJoinLabel">Код семьи</label>
+        <input id="familyJoinInput" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" data-ph="familyJoinPh" placeholder="XXXX-XXXX">
+      </div>
+      <button type="button" class="primary" data-action="join-family" data-t="familyJoin">Войти в семью</button>
+    </div>
   </div>
 </div>
 
