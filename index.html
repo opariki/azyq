@@ -23,6 +23,9 @@
     <button type="button" data-page="pantry">
       <span class="nav-icon">▦</span><span data-t="pantry">Мои запасы</span>
     </button>
+    <button type="button" data-page="chef">
+      <span class="nav-icon">✦</span><span data-t="chef">ИИ-повар</span>
+    </button>
     <button type="button" data-page="shopping">
       <span class="nav-icon">☷</span><span data-t="shopping">Покупки</span>
     </button>
@@ -34,7 +37,7 @@
   <div class="sidebar-bottom">
     <strong>AZYQ</strong><br>
     Less waste. More value.<br>
-    <span>Version 2.5 · Kazakhstan</span>
+    <span>Version 2.6 · Kazakhstan</span>
   </div>
 </aside>
 
@@ -172,6 +175,31 @@
         </div>
         <div class="product-grid" id="pantryProducts"></div>
       </div>
+    </section>
+
+    <!-- AI CHEF -->
+
+    <section class="page" id="chef">
+      <div class="eyebrow" data-t="eyChef">ИИ-ПОВАР</div>
+      <div class="page-heading">
+        <div>
+          <h1 data-t="chefTitle">Что приготовить.</h1>
+          <p class="page-description" data-t="chefSub">Выберите продукты и количество — ИИ предложит блюдо только из них.</p>
+        </div>
+        <button type="button" class="primary" id="chefCook" data-action="chef-cook" data-t="chefCook">Приготовить</button>
+      </div>
+
+      <div class="panel section-panel">
+        <div class="panel-head"><h2 data-t="chefPick">Что взять</h2></div>
+        <div class="chef-items" id="chefItems"></div>
+      </div>
+
+      <div class="panel section-panel">
+        <div class="panel-head"><h2 data-t="chefWishesTitle">Пожелания</h2></div>
+        <div class="chips chef-wishes" id="chefWishes"></div>
+      </div>
+
+      <div id="chefResult" aria-live="polite"></div>
     </section>
 
     <!-- SHOPPING -->

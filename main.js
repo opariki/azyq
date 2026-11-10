@@ -2,6 +2,7 @@
 import { t, setLang, getLang, translations } from "./i18n.js";
 import { UNITS, PRESETS, dateOffset, daysLeft, validateProduct } from "./model.js";
 import * as store from "./store.js";
+import { WISHES, applyCook } from "./chef.js";
 
 const $ = id => /** @type {HTMLElement} */ (document.getElementById(id));
 const val = id => /** @type {HTMLInputElement} */ ($(id)).value;
@@ -105,7 +106,7 @@ function renderWaste() {
 }
 
 function render() {
-  renderOverview(); renderPantry(); renderShopping(); renderWaste();
+  renderOverview(); renderPantry(); renderShopping(); renderWaste(); renderChef();
   $("breadcrumb").textContent = t(page);
 }
 const update = () => { store.commit(); render(); };
@@ -163,6 +164,128 @@ function applyLang() {
   render(); renderFamily();
 }
 
+/* ---------- AI chef: the browser sends only structured data; the prompt is built on the server ---------- */
+const chef = { sel: new Map(), seen: new Set(), wishes: new Set(), busy: false, items: [], dish: null, reply: "", msgs: [], error: "", draft: "" };
+
+const chefProducts = () => store.state.products
+  .filter(p => { const d = daysLeft(p.expiry); return d !== null && d >= 0; })
+  .sort((a, b) => daysLeft(a.expiry) - daysLeft(b.expiry));
+
+function renderChefItems(force) {
+  const box = $("chefItems");
+  if (!force && box.contains(document.activeElement)) return;
+  const list = chefProducts();
+  box.innerHTML = list.length ? list.map(p => {
+    const on = chef.sel.has(p.id), take = on ? chef.sel.get(p.id) : p.quantity, s = statusOf(p);
+    return `<div class="chef-item ${on ? "" : "off"}">
+      <input type="checkbox" ${on ? "checked" : ""} data-action="chef-toggle" data-id="${p.id}" aria-label="${esc(p.name)}">
+      <div class="chef-name">${esc(p.name)}<small>${s.text}</small></div>
+      <div class="chef-amount"><input type="number" min="0.01" max="${p.quantity}" step="any" value="${qty(take)}" ${on ? "" : "disabled"} data-action="chef-take" data-id="${p.id}" aria-label="${esc(t("quantityLabel"))}">
+      ${esc(t("chefOf"))} ${qty(p.quantity)} ${esc(unitLabel(p.unit))}</div></div>`;
+  }).join("") : empty("chefNoItems", "chefNoItemsSub");
+}
+
+function renderChef() {
+  const list = chefProducts(), byId = new Map(list.map(p => [p.id, p]));
+  for (const [id, take] of chef.sel) {
+    const p = byId.get(id);
+    if (!p) chef.sel.delete(id); else if (take > p.quantity) chef.sel.set(id, p.quantity);
+  }
+  for (const p of list) {            // products that are about to expire are selected by default, once
+    if (chef.seen.has(p.id)) continue;
+    chef.seen.add(p.id);
+    if (daysLeft(p.expiry) <= 3) chef.sel.set(p.id, p.quantity);
+  }
+  $("chefWishes").innerHTML = WISHES.map(k =>
+    `<button type="button" class="chip ${chef.wishes.has(k) ? "on" : ""}" aria-pressed="${chef.wishes.has(k)}" data-action="chef-wish" data-key="${k}">${esc(t("wish_" + k))}</button>`).join("");
+  renderChefItems(false);
+  renderChefResult(false);
+}
+
+function renderChefResult(force) {
+  const box = $("chefResult");
+  /** @type {HTMLButtonElement} */ ($("chefCook")).disabled = chef.busy;
+  if (!force && box.contains(document.activeElement)) return;
+  const d = chef.dish;
+  if (!d) {
+    box.innerHTML = chef.busy ? `<div class="chef-busy">${t("chefCooking")}</div>`
+      : chef.error ? `<div class="empty">${esc(chef.error)}</div>`
+      : chef.reply ? `<div class="empty"><strong>${t("chefNoDish")}</strong>${esc(chef.reply)}</div>` : "";
+    return;
+  }
+  const uses = d.uses.map(u => {
+    const it = chef.items.find(x => x.id === u.id);
+    return it ? `<li>${esc(it.name)} — ${qty(u.amount)} ${esc(unitLabel(it.unit))}</li>` : "";
+  }).join("");
+  const talk = chef.msgs.map(m => `<div class="chef-msg ${m.role}"><b>${t(m.role === "user" ? "chefYou" : "chefChef")}:</b> ${esc(m.text)}</div>`).join("");
+  box.innerHTML = `<article class="chef-card">
+    <h2>${esc(d.title)}</h2>
+    <div class="chef-meta">${t("chefMin", { n: d.timeMin })} · ${t("chefServ", { n: d.servings })}</div>
+    ${chef.reply ? `<p>${esc(chef.reply)}</p>` : ""}
+    <h3>${t("chefUses")}</h3><ul>${uses}</ul>
+    ${d.staples.length ? `<h3>${t("chefStaples")}</h3><p>${esc(d.staples.join(", "))}</p>` : ""}
+    ${d.missing.length ? `<h3>${t("chefMissing")}</h3><div class="chef-missing"><span>${esc(d.missing.join(", "))}</span><button type="button" class="secondary" data-action="chef-shop">${t("chefAddShop")}</button></div>` : ""}
+    <h3>${t("chefSteps")}</h3><ol>${d.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>
+    ${d.tip ? `<div class="chef-tip">${esc(d.tip)}</div>` : ""}
+    <div class="chef-actions"><button type="button" class="primary" data-action="chef-done">${t("chefDone")}</button></div>
+    <p class="chef-note">${t("chefCheck")}</p>
+    <div class="chef-chat">${talk}${chef.busy ? `<div class="chef-busy">${t("chefCooking")}</div>` : ""}
+      <div class="chef-input"><input id="chefMsg" maxlength="500" autocomplete="off" placeholder="${esc(t("chefChatPh"))}" value="${esc(chef.draft)}" ${chef.busy ? "disabled" : ""}>
+      <button type="button" class="secondary" data-action="chef-send" ${chef.busy ? "disabled" : ""}>${t("chefSend")}</button></div></div>
+  </article>`;
+}
+
+async function chefRequest(body) {
+  let r;
+  try { r = await fetch("/api/chef", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }); }
+  catch (e) { throw new Error("net"); }
+  let data = {};
+  try { data = (await r.json()) || {}; } catch (e) {}
+  if (!r.ok) throw new Error(r.status === 404 ? "not_configured" : data.error || "ai_error");
+  return data;
+}
+const chefErr = e => t(({ net: "chefErrNet", not_configured: "chefErrConfig", rate_limited: "chefErrLimit" })[e instanceof Error ? e.message : ""] || "chefErrAi");
+
+async function chefCook() {
+  if (chef.busy) return;
+  const items = chefProducts().filter(p => chef.sel.has(p.id)).map(p => ({
+    id: p.id, name: p.name, unit: p.unit, have: p.quantity, take: Math.min(chef.sel.get(p.id), p.quantity), days: daysLeft(p.expiry)
+  }));
+  if (!items.length) return toast(t("chefPickOne"));
+  Object.assign(chef, { busy: true, error: "", dish: null, msgs: [], reply: "", items, draft: "" });
+  renderChefResult(true);
+  try {
+    const a = await chefRequest({ action: "cook", lang: getLang(), items, wishes: [...chef.wishes] });
+    chef.dish = a.dish || null; chef.reply = a.reply || "";
+    if (!a.dish && !a.reply) chef.error = t("chefNoDish");
+  } catch (e) { chef.error = chefErr(e); }
+  chef.busy = false;
+  renderChefResult(true);
+}
+
+async function chefSend() {
+  const input = /** @type {HTMLInputElement|null} */ (document.getElementById("chefMsg"));
+  const text = input ? input.value.trim().slice(0, 500) : "";
+  if (!text || chef.busy || !chef.dish) return;
+  chef.msgs.push({ role: "user", text }); chef.draft = ""; chef.busy = true;
+  renderChefResult(true);
+  try {
+    const a = await chefRequest({ action: "chat", lang: getLang(), items: chef.items, wishes: [...chef.wishes], dish: chef.dish, messages: chef.msgs });
+    chef.msgs.push({ role: "assistant", text: a.reply || "…" });
+    if (a.dish) chef.dish = a.dish;
+  } catch (e) { chef.msgs.pop(); chef.draft = text; toast(chefErr(e)); }
+  chef.busy = false;
+  renderChefResult(true);
+}
+
+function chefDone() {
+  if (!chef.dish) return;
+  const n = applyCook(store.state, chef.dish.uses);
+  Object.assign(chef, { dish: null, msgs: [], reply: "", items: [], draft: "", error: "" });
+  update(); renderChefItems(true); renderChefResult(true);
+  toast(t("chefDoneToast", { n }));
+}
+
 /* ---------- family (shared cloud state) ---------- */
 function renderFamily() {
   const code = store.getFamily(), st = store.getStatus();
@@ -215,6 +338,11 @@ document.addEventListener("click", e => {
   else if (action === "use") finish(num, "used");
   else if (action === "discard") ask(t("confirmDiscard")).then(ok => ok && finish(num, "discarded"));
   else if (action === "add-shopping") addShop();
+  else if (action === "chef-cook") chefCook();
+  else if (action === "chef-send") chefSend();
+  else if (action === "chef-done") chefDone();
+  else if (action === "chef-shop") { if (chef.dish) { addToShopping(chef.dish.missing); toast(t("chefAddedShop")); } }
+  else if (action === "chef-wish") { if (key) { chef.wishes.has(key) ? chef.wishes.delete(key) : chef.wishes.add(key); renderChef(); } }
   else if (action === "delete-shop") { store.state.shopping = store.state.shopping.filter(x => x.id !== num); update(); }
   else if (action === "preset") {
     const p = PRESETS.find(x => x.key === key); if (!p) return;
@@ -234,6 +362,19 @@ document.addEventListener("click", e => {
 });
 document.addEventListener("change", e => {
   const el = /** @type {HTMLElement} */ (e.target);
+  if (el.dataset.action === "chef-toggle") {
+    const p = store.state.products.find(x => x.id === Number(el.dataset.id));
+    if (p) { /** @type {HTMLInputElement} */ (el).checked ? chef.sel.set(p.id, p.quantity) : chef.sel.delete(p.id); renderChefItems(true); }
+    return;
+  }
+  if (el.dataset.action === "chef-take") {
+    const p = store.state.products.find(x => x.id === Number(el.dataset.id)), inp = /** @type {HTMLInputElement} */ (el);
+    if (p && chef.sel.has(p.id)) {
+      const v = Math.round(Math.min(Math.max(Number(inp.value) || p.quantity, 0.01), p.quantity) * 100) / 100;
+      chef.sel.set(p.id, v); inp.value = qty(v);
+    }
+    return;
+  }
   if (el.dataset.action === "toggle-shop") { const x = store.state.shopping.find(s => s.id === Number(el.dataset.id)); if (x) { x.done = !x.done; update(); } }
 });
 function addShop() {
@@ -245,6 +386,7 @@ $("productForm").addEventListener("submit", submitProduct);
 $("familyModal").addEventListener("click", e => { if (/** @type {HTMLElement} */ (e.target).id === "familyModal") $("familyModal").classList.remove("open"); });
 $("modal").addEventListener("click", e => { if (/** @type {HTMLElement} */ (e.target).id === "modal") $("modal").classList.remove("open"); });
 ["search", "categoryFilter", "sortFilter"].forEach(id => $(id).addEventListener(id === "search" ? "input" : "change", renderPantry));
+document.addEventListener("keydown", e => { if (e.key === "Enter" && /** @type {HTMLElement} */ (e.target).id === "chefMsg") { e.preventDefault(); chefSend(); } });
 $("shoppingInput").addEventListener("keydown", e => { if (e.key === "Enter") addShop(); });
 $("language").addEventListener("change", e => { setLang(/** @type {HTMLSelectElement} */ (e.target).value); applyLang(); });
 

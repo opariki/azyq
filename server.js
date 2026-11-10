@@ -4,12 +4,13 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { sanitizeState } from "./model.js";
+import { handleChef } from "./chef-server.js";
 
 const base = path.dirname(fileURLToPath(import.meta.url));
 const root = base;
 const file = path.join(base, "data", "state.json");
 const types = { ".html": "text/html; charset=utf-8", ".css": "text/css", ".js": "text/javascript" };
-const PUBLIC = ["index.html", "styles.css", "main.js", "model.js", "store.js", "i18n.js"];
+const PUBLIC = ["index.html", "styles.css", "main.js", "model.js", "store.js", "i18n.js", "chef.js"];
 
 http.createServer(async (req, res) => {
   const send = (code, body, type = "application/json") => { res.writeHead(code, { "Content-Type": type }); res.end(body); };
@@ -28,6 +29,13 @@ http.createServer(async (req, res) => {
         return send(200, JSON.stringify(state));
       }
       return send(405, "{}");
+    }
+    if (req.url === "/api/chef") {
+      if (req.method !== "POST") return send(405, '{"error":"method_not_allowed"}');
+      let body = "";
+      for await (const chunk of req) { body += chunk; if (body.length > 1e5) return send(413, "{}"); }
+      const r = await handleChef(JSON.parse(body), process.env, String(req.socket.remoteAddress || ""));
+      return send(r.status, JSON.stringify(r.body));
     }
     const rel = (req.url ?? "/").split("?")[0];
     const target = path.normalize(path.join(root, rel === "/" ? "index.html" : rel));

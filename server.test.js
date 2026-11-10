@@ -33,3 +33,10 @@ test("PUT sanitizes, GET returns it", async () => {
 test("bad JSON gives 400", async () => {
   assert.equal((await fetch(base + "/api/state", { method: "PUT", body: "{oops" })).status, 400);
 });
+test("/api/chef: 405 on GET, 503 without a key", async () => {
+  assert.equal((await fetch(base + "/api/chef")).status, 405);
+  const r = await fetch(base + "/api/chef", { method: "POST", body: JSON.stringify({ action: "cook", items: [{ id: 1, name: "a", unit: "pcs", have: 1, take: 1, days: 1 }] }) });
+  assert.ok([503, 502].includes(r.status));
+  assert.equal((await fetch(base + "/chef.js")).status, 200);
+  assert.notEqual((await fetch(base + "/chef-server.js")).status, 200);
+});

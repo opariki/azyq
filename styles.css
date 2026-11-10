@@ -507,3 +507,34 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:18px}
 .family-or{text-align:center;color:var(--muted);font-size:12px;margin:14px 0}
 .family-btn:focus-visible,.family-actions .secondary:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 @media(max-width:760px){.top-actions{gap:8px}.family-btn{padding:7px 11px}}
+
+/* AI chef */
+.chef-items{padding:6px 20px 14px}
+.chef-item{display:grid;grid-template-columns:auto 1fr auto;gap:6px 12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.chef-item:last-child{border-bottom:0}
+.chef-item.off .chef-name,.chef-item.off .chef-amount{opacity:.45}
+.chef-name{font-weight:600;font-size:14px}
+.chef-name small{display:block;color:var(--muted);font-weight:400;font-size:12px;margin-top:2px}
+.chef-amount{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+.chef-amount input{width:76px;padding:7px 8px;border:1px solid var(--line);border-radius:8px;background:var(--white);font:inherit;font-size:13px;color:var(--ink)}
+.chef-wishes{padding:16px 20px 6px;margin:0}
+.chip.on{background:var(--green);border-color:var(--green);color:#fff}
+.chef-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px;margin-bottom:22px}
+.chef-card h2{font-size:22px;font-weight:600;letter-spacing:-.5px}
+.chef-meta{color:var(--muted);font-size:13px;margin:6px 0 14px}
+.chef-card h3{font-size:12px;color:var(--muted);margin:18px 0 8px;font-weight:700}
+.chef-card ul,.chef-card ol{padding-left:20px;font-size:14px;line-height:1.55}
+.chef-card li{margin-bottom:4px}
+.chef-missing{background:var(--orange-bg);border:1px solid #E6D3B8;border-radius:10px;padding:10px 14px;font-size:13px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.chef-tip{background:var(--green-bg);border-radius:10px;padding:10px 14px;font-size:13px;margin-top:14px}
+.chef-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}
+.chef-note{font-size:11px;color:var(--muted);margin-top:12px}
+.chef-chat{margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.chef-msg{font-size:13px;margin-bottom:8px;line-height:1.5}
+.chef-msg b{font-weight:700}
+.chef-msg.user{color:var(--muted)}
+.chef-input{display:flex;gap:8px;margin-top:8px}
+.chef-input input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--white);font:inherit;font-size:13px}
+.chef-busy{color:var(--muted);font-size:13px;padding:6px 2px 22px}
+button:disabled{opacity:.55;cursor:default;transform:none}
+@media(max-width:760px){.chef-card{padding:16px}.chef-item{grid-template-columns:auto 1fr}.chef-amount{grid-column:2}}
