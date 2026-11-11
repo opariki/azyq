@@ -18,19 +18,19 @@
 
   <nav class="nav">
     <button type="button" class="active" data-page="overview">
-      <span class="nav-icon">⌂</span><span data-t="overview">Обзор</span>
+      <span class="nav-icon" data-icon="home"></span><span data-t="overview">Обзор</span>
     </button>
     <button type="button" data-page="pantry">
-      <span class="nav-icon">▦</span><span data-t="pantry">Мои запасы</span>
+      <span class="nav-icon" data-icon="pantry"></span><span data-t="pantry">Мои запасы</span>
     </button>
     <button type="button" data-page="chef">
-      <span class="nav-icon">✦</span><span data-t="chef">ИИ-повар</span>
+      <span class="nav-icon" data-icon="aspaz"></span><span data-t="chef">ASPAZ</span>
     </button>
     <button type="button" data-page="shopping">
-      <span class="nav-icon">☷</span><span data-t="shopping">Покупки</span>
+      <span class="nav-icon" data-icon="cart"></span><span data-t="shopping">Покупки</span>
     </button>
     <button type="button" data-page="waste">
-      <span class="nav-icon">↗</span><span data-t="waste">Статистика</span>
+      <span class="nav-icon" data-icon="stats"></span><span data-t="waste">Статистика</span>
     </button>
   </nav>
 
@@ -78,7 +78,7 @@
         <div class="stat">
           <div class="stat-top">
             <span data-t="totalProducts">Всего продуктов</span>
-            <span class="stat-icon">▦</span>
+            <span class="stat-icon" data-icon="pantry"></span>
           </div>
           <div class="stat-number" id="totalCount">0</div>
           <div class="stat-note" data-t="inPantry">В ваших запасах</div>
@@ -87,7 +87,7 @@
         <div class="stat">
           <div class="stat-top">
             <span data-t="expiring">Скоро истекает</span>
-            <span class="stat-icon">◷</span>
+            <span class="stat-icon" data-icon="clock"></span>
           </div>
           <div class="stat-number" id="expiringCount">0</div>
           <div class="stat-note" data-t="nextThree">В ближайшие 3 дня</div>
@@ -96,7 +96,7 @@
         <div class="stat">
           <div class="stat-top">
             <span data-t="expired">Просрочено</span>
-            <span class="stat-icon">!</span>
+            <span class="stat-icon" data-icon="alert"></span>
           </div>
           <div class="stat-number" id="expiredCount">0</div>
           <div class="stat-note" data-t="needsAttention">Требует внимания</div>
@@ -105,7 +105,7 @@
         <div class="stat">
           <div class="stat-top">
             <span data-t="saved">Использовано</span>
-            <span class="stat-icon">✓</span>
+            <span class="stat-icon" data-icon="circleCheck"></span>
           </div>
           <div class="stat-number" id="usedCount">0</div>
           <div class="stat-note" data-t="usedTotal">Всего использовано</div>
@@ -180,7 +180,7 @@
     <!-- AI CHEF -->
 
     <section class="page" id="chef">
-      <div class="eyebrow" data-t="eyChef">ИИ-ПОВАР</div>
+      <div class="eyebrow" data-t="eyChef">ASPAZ</div>
       <div class="page-heading">
         <div>
           <h1 data-t="chefTitle">Что приготовить.</h1>
@@ -262,7 +262,7 @@
   <div class="modal">
     <div class="modal-head">
       <h2 data-t="newProduct">Новый продукт</h2>
-      <button type="button" class="close" data-action="close-modal" aria-label="Close">×</button>
+      <button type="button" class="close" data-action="close-modal" aria-label="Close" data-icon="x"></button>
     </div>
 
     <form id="productForm">
@@ -316,7 +316,7 @@
   <div class="modal">
     <div class="modal-head">
       <h2 data-t="familyTitle">Семья</h2>
-      <button type="button" class="close" data-action="close-family" aria-label="Close">×</button>
+      <button type="button" class="close" data-action="close-family" aria-label="Close" data-icon="x"></button>
     </div>
 
     <div id="familyOut" hidden>

@@ -1,6 +1,6 @@
 // Server side of the AI chef: validates the request, builds the prompt, calls the model, validates the answer.
 // Used by the Vercel function (api/chef.js) and by the local server (server.js). The API key never reaches the browser.
-// Env: ANTHROPIC_API_KEY (default model claude-haiku-5-5) OR GEMINI_API_KEY (default models gemini-3.8-flash, then gemini-flash-lite-latest); CHEF_MODEL overrides the model (comma-separated list = fallback order).
+// Env: ANTHROPIC_API_KEY (default model claude-haiku-5-5) OR GEMINI_API_KEY (default models gemini-flash-lite-latest, then gemini-flash-latest); CHEF_MODEL overrides the model (comma-separated list = fallback order).
 import { sanitizeRequest, buildSystem, buildPrompt, parseAnswer } from "./chef.js";
 
 const WINDOW_MS = 10 * 60 * 1000, MAX_HITS = 20;
@@ -69,10 +69,12 @@ async function askModel(env, system, prompt) {
     return (data.content || []).map(b => b.text || "").join("");
   }
   // CHEF_MODEL may be a comma-separated list: the next model is tried when the previous one fails.
-  const models = String(env.CHEF_MODEL || "gemini-3.8-flash,gemini-flash-lite-latest").split(",").map(x => x.trim()).filter(Boolean);
+  const models = String(env.CHEF_MODEL || "gemini-flash-lite-latest,gemini-flash-latest").split(",").map(x => x.trim()).filter(Boolean);
   let last;
   for (const m of models) {
-    try { return await askGemini(env, m, system, prompt, end); }
+    // the first (fast) model gets 12 s; if it is slow or fails, the next model takes over right away
+    const until = m === models[models.length - 1] ? end : Math.min(end, Date.now() + 12000);
+    try { return await askGemini(env, m, system, prompt, until); }
     catch (e) { last = e; console.error("chef model " + m + " failed:", e?.message || e); if (end - Date.now() < 4000) break; }
   }
   throw last;

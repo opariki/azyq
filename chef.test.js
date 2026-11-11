@@ -76,3 +76,15 @@ test("server: rate limit after 20 requests from one ip", async () => {
     assert.equal(last.status, 429);
   } finally { globalThis.fetch = real; }
 });
+test("server: Flash-Lite is tried first, Flash is the fallback", async () => {
+  const real = globalThis.fetch, calls = [], ans = JSON.stringify({ reply: "Ок", dish: dish() });
+  try {
+    globalThis.fetch = async url => {
+      calls.push(String(url).match(/models\/([^:]+):/)[1]);
+      return calls.length === 1 ? { ok: false, status: 503, text: async () => "busy" } : { ok: true, json: async () => ({ candidates: [{ content: { parts: [{ text: ans }] } }] }) };
+    };
+    const r = await handleChef({ action: "cook", items: [item()] }, { GEMINI_API_KEY: "k", CHEF_RETRY_MS: [] }, "fallback-ip");
+    assert.equal(r.status, 200);
+    assert.deepEqual(calls, ["gemini-flash-lite-latest", "gemini-flash-latest"]);
+  } finally { globalThis.fetch = real; }
+});

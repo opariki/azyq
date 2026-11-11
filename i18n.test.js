@@ -14,3 +14,11 @@ test("every data-t key used in index.html exists", () => {
   const missing = keys.filter(k => !(k in translations.ru));
   assert.deepEqual(missing, []);
 });
+test("every data-icon in index.html exists in icons.js", async () => {
+  const { iconNames } = await import("./icons.js");
+  const used = [...fs.readFileSync("index.html", "utf8").matchAll(/data-icon="(\w+)"/g)].map(m => m[1]);
+  assert.deepEqual(used.filter(n => !iconNames.includes(n)), []);
+});
+test("ASPAZ is the section name in every language", () => {
+  for (const l of ["ru", "kk", "en"]) assert.equal(translations[l].chef, "ASPAZ");
+});

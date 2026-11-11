@@ -3,6 +3,7 @@ import { t, setLang, getLang, translations } from "./i18n.js";
 import { UNITS, PRESETS, dateOffset, daysLeft, validateProduct } from "./model.js";
 import * as store from "./store.js";
 import { WISHES, applyCook } from "./chef.js";
+import { icon } from "./icons.js";
 
 const $ = id => /** @type {HTMLElement} */ (document.getElementById(id));
 const val = id => /** @type {HTMLInputElement} */ ($(id)).value;
@@ -47,8 +48,8 @@ function card(p) {
     <div class="product-meta">${esc(t(p.category))} · ${qty(p.quantity)} ${esc(unitLabel(p.unit))}</div>
     <div class="product-bottom"><span class="status ${s.cls}">${s.text}</span>
       <div class="product-actions">
-        <button type="button" class="icon-btn" title="${t("usedAction")}" aria-label="${t("usedAction")}" data-action="use" data-id="${p.id}">✓</button>
-        <button type="button" class="icon-btn" title="${t("discardAction")}" aria-label="${t("discardAction")}" data-action="discard" data-id="${p.id}">×</button>
+        <button type="button" class="icon-btn" title="${t("usedAction")}" aria-label="${t("usedAction")}" data-action="use" data-id="${p.id}">${icon("check")}</button>
+        <button type="button" class="icon-btn" title="${t("discardAction")}" aria-label="${t("discardAction")}" data-action="discard" data-id="${p.id}">${icon("x")}</button>
       </div></div></div></article>`;
 }
 const empty = (k, sub) => `<div class="empty"><strong>${t(k)}</strong>${sub ? t(sub) : ""}</div>`;
@@ -89,7 +90,7 @@ function renderShopping() {
   const { shopping } = store.state;
   $("shoppingList").innerHTML = shopping.length ? shopping.map(x =>
     `<div class="shopping-item ${x.done ? "done" : ""}"><input type="checkbox" ${x.done ? "checked" : ""} data-action="toggle-shop" data-id="${x.id}">
-     <span>${esc(x.name)}</span><button type="button" class="icon-btn" aria-label="${t("remove")}" data-action="delete-shop" data-id="${x.id}">×</button></div>`
+     <span>${esc(x.name)}</span><button type="button" class="icon-btn" aria-label="${t("remove")}" data-action="delete-shop" data-id="${x.id}">${icon("x")}</button></div>`
   ).join("") : `<div class="empty">${t("emptyShopping")}</div>`;
 }
 
@@ -104,6 +105,8 @@ function renderWaste() {
       <span class="status ${used ? "safe" : "danger"}">${used ? t("usedHistory") : t("discardedHistory")}</span></div>`;
   }).join("") : `<div class="empty">${t("emptyHistory")}</div>`;
 }
+
+document.querySelectorAll("[data-icon]").forEach(el => { el.innerHTML = icon(/** @type {HTMLElement} */ (el).dataset.icon || ""); });
 
 function render() {
   renderOverview(); renderPantry(); renderShopping(); renderWaste(); renderChef();
