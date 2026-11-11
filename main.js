@@ -241,10 +241,14 @@ async function chefRequest(body) {
   catch (e) { throw new Error("net"); }
   let data = {};
   try { data = (await r.json()) || {}; } catch (e) {}
-  if (!r.ok) throw new Error(r.status === 404 ? "not_configured" : data.error || "ai_error");
+  if (!r.ok) throw Object.assign(new Error(r.status === 404 ? "not_configured" : data.error || "ai_error"), { code: data.code || "http" + r.status });
   return data;
 }
-const chefErr = e => t(({ net: "chefErrNet", not_configured: "chefErrConfig", rate_limited: "chefErrLimit" })[e instanceof Error ? e.message : ""] || "chefErrAi");
+const chefErr = e => {
+  const m = e instanceof Error ? e.message : "";
+  const text = t(({ net: "chefErrNet", not_configured: "chefErrConfig", rate_limited: "chefErrLimit" })[m] || "chefErrAi");
+  return e?.code && m !== "net" && m !== "not_configured" && m !== "rate_limited" ? text + " (" + e.code + ")" : text;
+};
 
 async function chefCook() {
   if (chef.busy) return;
