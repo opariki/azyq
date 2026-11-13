@@ -1,6 +1,6 @@
 // @ts-check
 import { t, setLang, getLang, translations } from "./i18n.js";
-import { UNITS, PRESETS, dateOffset, daysLeft, validateProduct } from "./model.js";
+import { UNITS, PRESETS, MAX_FAVORITES, dateOffset, daysLeft, validateProduct, validateFavorite } from "./model.js";
 import * as store from "./store.js";
 import { WISHES, applyCook } from "./chef.js";
 import { icon } from "./icons.js";
@@ -11,6 +11,21 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;"
 const unitLabel = u => t(UNITS[u] || "unitPcs");
 const qty = n => String(+n.toFixed(2));
 let page = "overview";
+const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Animated number: counts from the previous value to the new one. */
+function countTo(el, n) {
+  const from = Number(el.dataset.v ?? el.textContent) || 0;
+  el.dataset.v = String(n);
+  if (from === n || reduced()) { el.textContent = String(n); return; }
+  const t0 = performance.now();
+  const step = now => {
+    const k = Math.min(1, (now - t0) / 450);
+    el.textContent = String(Math.round(from + (n - from) * (1 - Math.pow(1 - k, 3))));
+    if (k < 1 && el.dataset.v === String(n)) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
 
 /* ---------- feedback: toast + confirm dialog (no alert/confirm) ---------- */
 let toastTimer = 0;
@@ -55,26 +70,46 @@ function card(p) {
 const empty = (k, sub) => `<div class="empty"><strong>${t(k)}</strong>${sub ? t(sub) : ""}</div>`;
 
 function renderOverview() {
-  const { products, history } = store.state;
-  const days = products.map(p => daysLeft(p.expiry));
-  $("totalCount").textContent = String(products.length);
-  $("expiringCount").textContent = String(days.filter(d => d !== null && d >= 0 && d <= 3).length);
-  $("expiredCount").textContent = String(days.filter(d => d !== null && d < 0).length);
-  $("usedCount").textContent = String(history.filter(x => x.type === "used").length);
+  const { products } = store.state;
+  countTo($("totalCount"), products.length);
+  countTo($("attentionCount"), due().length);
 
   const attention = due().sort((a, b) => daysLeft(a.expiry) - daysLeft(b.expiry)).slice(0, 5);
   $("attentionList").innerHTML = attention.length ? attention.map(p => {
     const s = statusOf(p);
     return `<div class="expiry-item"><div class="food-info"><strong>${esc(p.name)}</strong><small>${qty(p.quantity)} ${esc(unitLabel(p.unit))}</small></div><span class="status ${s.cls}">${s.text}</span></div>`;
   }).join("") : empty("noAttention");
-  const recent = [...products].sort((a, b) => b.created - a.created).slice(0, 3);
-  $("recentProducts").innerHTML = recent.length ? recent.map(card).join("") : empty("noProducts", "noProductsSub");
 
+  // the banner only appears when it offers something to do (enable notifications)
   const n = due().length, box = $("reminder");
   const canAsk = "Notification" in window && Notification.permission === "default";
-  box.hidden = !n;
-  box.innerHTML = n ? `<span>${esc(t("remindBanner", { n }))}</span>` +
-    (canAsk ? `<button type="button" class="secondary" data-action="notify">${t("remindEnable")}</button>` : "") : "";
+  box.hidden = !(n && canAsk);
+  box.innerHTML = box.hidden ? "" : `<span>${esc(t("remindBanner", { n }))}</span><button type="button" class="secondary" data-action="notify">${t("remindEnable")}</button>`;
+}
+
+/** Favorites (saved by the user) first, then the built-in quick picks. */
+function renderPresets() {
+  const favs = store.state.favorites || [];
+  const favHtml = favs.length ? `<div class="chips-label">${t("favTitle")}</div><div class="chips">` + favs.map(f =>
+    `<span class="chip fav"><button type="button" class="chip-main" data-action="fav-use" data-id="${f.id}">${esc(f.name)}</button><button type="button" class="chip-x" data-action="fav-del" data-id="${f.id}" aria-label="${esc(t("favRemove"))}" title="${esc(t("favRemove"))}">${icon("x")}</button></span>`).join("") + `</div>` : "";
+  $("presets").innerHTML = favHtml + `<div class="chips-label">${t("presetsTitle")}</div><div class="chips">` +
+    PRESETS.map(p => `<button type="button" class="chip" data-action="preset" data-key="${p.key}">${esc(t("ing_" + p.key))}</button>`).join("") + `</div>`;
+}
+
+function saveFavorite(p) {
+  const f = validateFavorite({ name: p.name, category: p.category, unit: p.unit, quantity: p.quantity, days: Math.max(1, daysLeft(p.expiry) ?? 7) });
+  if (!f) return;
+  const list = store.state.favorites, i = list.findIndex(x => x.name.toLowerCase() === f.name.toLowerCase() && x.unit === f.unit);
+  if (i >= 0) list[i] = { ...f, id: list[i].id }; else list.unshift(f);
+  store.state.favorites = list.slice(0, MAX_FAVORITES);
+}
+
+function fillForm(v) {
+  /** @type {HTMLInputElement} */ ($("productName")).value = v.name;
+  /** @type {HTMLInputElement} */ ($("productCategory")).value = v.category;
+  /** @type {HTMLInputElement} */ ($("productUnit")).value = v.unit;
+  /** @type {HTMLInputElement} */ ($("productExpiry")).value = dateOffset(v.days);
+  if (v.quantity) /** @type {HTMLInputElement} */ ($("productQuantity")).value = String(v.quantity);
 }
 
 function renderPantry() {
@@ -109,19 +144,23 @@ function renderWaste() {
 document.querySelectorAll("[data-icon]").forEach(el => { el.innerHTML = icon(/** @type {HTMLElement} */ (el).dataset.icon || ""); });
 
 function render() {
-  renderOverview(); renderPantry(); renderShopping(); renderWaste(); renderChef();
+  renderOverview(); renderPantry(); renderShopping(); renderWaste(); renderChef(); renderPresets();
   $("breadcrumb").textContent = t(page);
 }
 const update = () => { store.commit(); render(); };
 
 /* ---------- actions ---------- */
 function finish(id, type) {
-  const { state } = store, p = state.products.find(x => x.id === id);
-  if (!p) return;
-  state.history.unshift({ name: p.name, type, date: new Date().toISOString() });
-  state.products = state.products.filter(x => x.id !== id);
-  update();
-  toast(t(type === "used" ? "allUsed" : "discardedReason"));
+  const run = () => {
+    const { state } = store, p = state.products.find(x => x.id === id);
+    if (!p) return;
+    state.history.unshift({ name: p.name, type, date: new Date().toISOString() });
+    state.products = state.products.filter(x => x.id !== id);
+    update();
+    toast(t(type === "used" ? "allUsed" : "discardedReason"));
+  };
+  const cards = [...document.querySelectorAll(`[data-action="use"][data-id="${id}"]`)].map(b => b.closest(".product-card")).filter(Boolean);
+  if (cards.length && !reduced()) { cards.forEach(c => c.classList.add("leaving")); setTimeout(run, 230); } else run();
 }
 
 function addToShopping(names) {
@@ -143,9 +182,11 @@ function submitProduct(e) {
   const dup = store.state.products.find(x => x.name.toLowerCase() === p.name.toLowerCase() && x.unit === p.unit && x.expiry === p.expiry);
   if (dup) dup.quantity = Math.round((dup.quantity + p.quantity) * 100) / 100;
   else store.state.products.unshift(p);
+  const fav = /** @type {HTMLInputElement} */ ($("productFav")).checked;
+  if (fav) saveFavorite(p);
   /** @type {HTMLFormElement} */ (e.target).reset();
   $("modal").classList.remove("open");
-  update(); navigate("pantry"); toast(t("added"));
+  update(); navigate("pantry"); toast(t(fav ? "favAdded" : "added"));
 }
 
 function navigate(name) {
@@ -154,6 +195,7 @@ function navigate(name) {
   document.querySelectorAll(".page").forEach(x => x.classList.toggle("active", x.id === name));
   document.querySelectorAll(".nav button").forEach(x => x.classList.toggle("active", /** @type {HTMLElement} */ (x).dataset.page === name));
   $("breadcrumb").textContent = t(name);
+  const pg = $(name); pg.classList.add("entering"); setTimeout(() => pg.classList.remove("entering"), 900);
   window.scrollTo(0, 0);
 }
 
@@ -163,7 +205,6 @@ function applyLang() {
   $("productExpiry").lang = lang;
   document.querySelectorAll("[data-t]").forEach(el => { const k = /** @type {HTMLElement} */ (el).dataset.t; if (translations[lang][k]) el.textContent = translations[lang][k]; });
   document.querySelectorAll("[data-ph]").forEach(el => { const k = /** @type {HTMLElement} */ (el).dataset.ph; if (translations[lang][k]) /** @type {HTMLInputElement} */ (el).placeholder = translations[lang][k]; });
-  $("presets").innerHTML = PRESETS.map(p => `<button type="button" class="chip" data-action="preset" data-key="${p.key}">${esc(t("ing_" + p.key))}</button>`).join("");
   render(); renderFamily();
 }
 
@@ -211,7 +252,7 @@ function renderChefResult(force) {
   if (!force && box.contains(document.activeElement)) return;
   const d = chef.dish;
   if (!d) {
-    box.innerHTML = chef.busy ? `<div class="chef-busy">${t("chefCooking")}</div>`
+    box.innerHTML = chef.busy ? `<div class="chef-busy"><span class="spinner" aria-hidden="true"></span>${t("chefCooking")}</div>`
       : chef.error ? `<div class="empty">${esc(chef.error)}</div>`
       : chef.reply ? `<div class="empty"><strong>${t("chefNoDish")}</strong>${esc(chef.reply)}</div>` : "";
     return;
@@ -232,7 +273,7 @@ function renderChefResult(force) {
     ${d.tip ? `<div class="chef-tip">${esc(d.tip)}</div>` : ""}
     <div class="chef-actions"><button type="button" class="primary" data-action="chef-done">${t("chefDone")}</button></div>
     <p class="chef-note">${t("chefCheck")}</p>
-    <div class="chef-chat">${talk}${chef.busy ? `<div class="chef-busy">${t("chefCooking")}</div>` : ""}
+    <div class="chef-chat">${talk}${chef.busy ? `<div class="chef-busy"><span class="spinner" aria-hidden="true"></span>${t("chefCooking")}</div>` : ""}
       <div class="chef-input"><input id="chefMsg" maxlength="500" autocomplete="off" placeholder="${esc(t("chefChatPh"))}" value="${esc(chef.draft)}" ${chef.busy ? "disabled" : ""}>
       <button type="button" class="secondary" data-action="chef-send" ${chef.busy ? "disabled" : ""}>${t("chefSend")}</button></div></div>
   </article>`;
@@ -353,10 +394,11 @@ document.addEventListener("click", e => {
   else if (action === "delete-shop") { store.state.shopping = store.state.shopping.filter(x => x.id !== num); update(); }
   else if (action === "preset") {
     const p = PRESETS.find(x => x.key === key); if (!p) return;
-    /** @type {HTMLInputElement} */ ($("productName")).value = t("ing_" + p.key);
-    /** @type {HTMLInputElement} */ ($("productCategory")).value = p.category;
-    /** @type {HTMLInputElement} */ ($("productUnit")).value = p.unit;
-    /** @type {HTMLInputElement} */ ($("productExpiry")).value = dateOffset(p.days);
+    fillForm({ name: t("ing_" + p.key), category: p.category, unit: p.unit, days: p.days });
+  } else if (action === "fav-use") {
+    const f = store.state.favorites.find(x => x.id === num); if (f) fillForm(f);
+  } else if (action === "fav-del") {
+    store.state.favorites = store.state.favorites.filter(x => x.id !== num); update();
   } else if (action === "open-family") { renderFamily(); $("familyModal").classList.add("open"); }
   else if (action === "close-family") $("familyModal").classList.remove("open");
   else if (action === "create-family") doCreate(/** @type {HTMLButtonElement} */ (btn));
@@ -410,5 +452,8 @@ $("language").addEventListener("change", e => { setLang(/** @type {HTMLSelectEle
     store.commit();
   }
   applyLang();
+  let seen = false;
+  try { seen = !!localStorage.getItem("azyq_home_seen"); } catch (e) {}
+  if (!seen) { navigate("home"); try { localStorage.setItem("azyq_home_seen", "1"); } catch (e) {} }
   notifyDue();
 })();

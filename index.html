@@ -11,14 +11,17 @@
 <div class="app">
 
 <aside class="sidebar">
-  <div class="brand">AZ<span>Y</span>Q.</div>
+  <div class="brand" data-page="home" title="AZYQ">AZ<span>Y</span>Q.</div>
   <div class="brand-sub">SMART PANTRY</div>
 
   <div class="nav-label" data-t="workspace">WORKSPACE</div>
 
   <nav class="nav">
+    <button type="button" class="desktop-only" data-page="home">
+      <span class="nav-icon" data-icon="home"></span><span data-t="home">Главная</span>
+    </button>
     <button type="button" class="active" data-page="overview">
-      <span class="nav-icon" data-icon="home"></span><span data-t="overview">Обзор</span>
+      <span class="nav-icon" data-icon="dashboard"></span><span data-t="overview">Обзор</span>
     </button>
     <button type="button" data-page="pantry">
       <span class="nav-icon" data-icon="pantry"></span><span data-t="pantry">Мои запасы</span>
@@ -37,13 +40,13 @@
   <div class="sidebar-bottom">
     <strong>AZYQ</strong><br>
     Less waste. More value.<br>
-    <span>Version 2.6 · Kazakhstan</span>
+    <span>Version 2.8 · Kazakhstan</span>
   </div>
 </aside>
 
 <main>
   <header class="topbar">
-    <div class="breadcrumb">AZYQ / <strong id="breadcrumb">Обзор</strong></div>
+    <div class="breadcrumb"><button type="button" class="crumb-home" data-page="home">AZYQ</button> / <strong id="breadcrumb">Обзор</strong></div>
     <div class="top-actions">
       <button type="button" class="family-btn" id="familyBtn" data-action="open-family" data-t="family">Семья</button>
       <select class="lang" id="language" aria-label="Language">
@@ -56,6 +59,31 @@
   </header>
 
   <div class="content">
+
+    <!-- HOME -->
+
+    <section class="page" id="home">
+      <div class="hero">
+        <div class="eyebrow" data-t="homeEyebrow">ДОБРО ПОЖАЛОВАТЬ</div>
+        <h1 data-t="homeTitle">Меньше выброшенной еды.</h1>
+        <p class="page-description" data-t="homeSub">AZYQ показывает, что есть дома и когда это испортится, а ASPAZ подсказывает, что приготовить.</p>
+        <div class="hero-actions">
+          <button type="button" class="primary" data-action="open-modal" data-t="homeStart">Добавить первый продукт</button>
+          <button type="button" class="secondary" data-page="chef" data-t="homeTry">Попробовать ASPAZ</button>
+        </div>
+      </div>
+
+      <div class="steps">
+        <div class="step"><div class="step-num">1</div><h3 data-t="homeStep1T">Добавьте продукты</h3><p data-t="homeStep1">Укажите название и срок годности</p></div>
+        <div class="step"><div class="step-num">2</div><h3 data-t="homeStep2T">Следите за сроками</h3><p data-t="homeStep2">AZYQ покажет, что испортится первым</p></div>
+        <div class="step"><div class="step-num">3</div><h3 data-t="homeStep3T">Готовьте с ASPAZ</h3><p data-t="homeStep3">ИИ предложит блюдо из ваших продуктов</p></div>
+      </div>
+
+      <div class="home-extra">
+        <div class="panel info"><span class="stat-icon" data-icon="users"></span><div><h3 data-t="homeFamilyT">Семья</h3><p data-t="homeFamily">Общие запасы и покупки на всех устройствах по коду</p></div></div>
+        <div class="panel info"><span class="stat-icon" data-icon="globe"></span><div><h3 data-t="homeLangT">Три языка</h3><p data-t="homeLang">Русский, қазақша, English</p></div></div>
+      </div>
+    </section>
 
     <!-- OVERVIEW -->
 
@@ -74,7 +102,7 @@
 
       <div class="reminder" id="reminder" hidden></div>
 
-      <div class="stats">
+      <div class="stats stats-2">
         <div class="stat">
           <div class="stat-top">
             <span data-t="totalProducts">Всего продуктов</span>
@@ -86,29 +114,11 @@
 
         <div class="stat">
           <div class="stat-top">
-            <span data-t="expiring">Скоро истекает</span>
+            <span data-t="needsAttention">Требует внимания</span>
             <span class="stat-icon" data-icon="clock"></span>
           </div>
-          <div class="stat-number" id="expiringCount">0</div>
-          <div class="stat-note" data-t="nextThree">В ближайшие 3 дня</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-top">
-            <span data-t="expired">Просрочено</span>
-            <span class="stat-icon" data-icon="alert"></span>
-          </div>
-          <div class="stat-number" id="expiredCount">0</div>
-          <div class="stat-note" data-t="needsAttention">Требует внимания</div>
-        </div>
-
-        <div class="stat">
-          <div class="stat-top">
-            <span data-t="saved">Использовано</span>
-            <span class="stat-icon" data-icon="circleCheck"></span>
-          </div>
-          <div class="stat-number" id="usedCount">0</div>
-          <div class="stat-note" data-t="usedTotal">Всего использовано</div>
+          <div class="stat-number" id="attentionCount">0</div>
+          <div class="stat-note" data-t="statAttentionNote">Скоро истекает или просрочено</div>
         </div>
       </div>
 
@@ -124,23 +134,11 @@
         <div>
           <div class="quick-card">
             <div class="eyebrow" data-t="smartTip">УМНАЯ ПОДСКАЗКА</div>
-            <h3 data-t="tipTitle">Сначала используйте то, что уже есть.</h3>
-            <p data-t="tipText">Проверяйте ближайшие сроки годности перед следующей покупкой.</p>
-            <button type="button" data-page="pantry" data-t="viewPantry">Посмотреть запасы →</button>
-          </div>
-          <div class="tip">
-            <h3 data-t="dailyTip">Принцип AZYQ</h3>
-            <p data-t="dailyText">Планирование начинается с холодильника, а не со списка покупок. Это помогает избежать повторных покупок и лишних расходов.</p>
+            <h3 data-t="overviewAsk">Не знаете, что приготовить?</h3>
+            <p data-t="overviewAskSub">ASPAZ предложит блюдо из ваших продуктов, начиная с тех, что скоро испортятся.</p>
+            <button type="button" data-page="chef" data-t="overviewAskBtn">Открыть ASPAZ</button>
           </div>
         </div>
-      </div>
-
-      <div class="panel section-panel">
-        <div class="panel-head">
-          <h2 data-t="recent">Недавно добавленные</h2>
-          <button type="button" class="secondary" data-page="pantry" data-t="allProducts">Все продукты →</button>
-        </div>
-        <div class="product-grid" id="recentProducts"></div>
       </div>
     </section>
 
@@ -266,7 +264,7 @@
     </div>
 
     <form id="productForm">
-      <div class="chips" id="presets"></div>
+      <div id="presets"></div>
 
       <div class="form-group">
         <label data-t="productName">Название продукта</label>
@@ -305,6 +303,8 @@
         <label data-t="expiry">Срок годности</label>
         <input id="productExpiry" type="date" required lang="ru">
       </div>
+
+      <label class="fav-check"><input type="checkbox" id="productFav"><span data-t="favSave">Запомнить в избранное</span></label>
 
       <button class="primary" type="submit" data-t="saveProduct">Сохранить продукт</button>
       <p class="notice" data-t="expiryNotice">Указывайте дату с упаковки. AZYQ использует её для напоминаний о сроках.</p>

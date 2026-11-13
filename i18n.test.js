@@ -22,3 +22,21 @@ test("every data-icon in index.html exists in icons.js", async () => {
 test("ASPAZ is the section name in every language", () => {
   for (const l of ["ru", "kk", "en"]) assert.equal(translations[l].chef, "ASPAZ");
 });
+test("every data-page in index.html points to an existing page", () => {
+  const html = fs.readFileSync("index.html", "utf8");
+  const ids = new Set([...html.matchAll(/\bid="([\w-]+)"/g)].map(m => m[1]));
+  const targets = [...html.matchAll(/data-page="([\w-]+)"/g)].map(m => m[1]);
+  assert.ok(targets.includes("home"));
+  assert.deepEqual(targets.filter(x => !ids.has(x)), []);
+});
+test("main.js only uses element ids that exist in index.html", () => {
+  const html = fs.readFileSync("index.html", "utf8"), js = fs.readFileSync("main.js", "utf8");
+  const ids = new Set([...html.matchAll(/\bid="([\w-]+)"/g)].map(m => m[1]));
+  const used = [...js.matchAll(/\$\("([\w-]+)"\)/g)].map(m => m[1]);
+  const dynamic = new Set(["chefMsg"]);
+  assert.deepEqual([...new Set(used)].filter(x => !ids.has(x) && !dynamic.has(x)), []);
+});
+test("home page and favorites texts exist in all languages", () => {
+  for (const k of ["home", "homeTitle", "homeStart", "favTitle", "favSave", "favAdded", "overviewAsk", "presetsTitle"])
+    for (const l of ["ru", "kk", "en"]) assert.ok(translations[l][k], l + "." + k);
+});

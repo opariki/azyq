@@ -3,7 +3,7 @@ import { sanitizeState } from "./model.js";
 /** @typedef {import("./model.js").State} State */
 
 /** @type {State} */
-export let state = { products: [], shopping: [], history: [] };
+export let state = { products: [], shopping: [], history: [], favorites: [] };
 
 let remote = false;            // local node server (/api/state)
 let familyCode = "";           // shared family (/api/family -> Supabase)

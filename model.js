@@ -4,7 +4,8 @@
  * @typedef {{id:number,name:string,category:string,quantity:number,unit:string,expiry:string,created:number}} Product
  * @typedef {{id:number,name:string,done:boolean}} ShoppingItem
  * @typedef {{name:string,type:"used"|"discarded",date:string}} HistoryItem
- * @typedef {{products:Product[],shopping:ShoppingItem[],history:HistoryItem[]}} State
+ * @typedef {{id:number,name:string,category:string,unit:string,quantity:number,days:number}} Favorite
+ * @typedef {{products:Product[],shopping:ShoppingItem[],history:HistoryItem[],favorites:Favorite[]}} State
  */
 export const CATEGORIES = ["dairy", "vegetables", "fruits", "meat", "other"];
 export const UNITS = { pcs: "unitPcs", kg: "unitKg", g: "unitG", l: "unitL", ml: "unitMl", pack: "unitPack" };
@@ -45,6 +46,24 @@ export function validateProduct(p) {
   };
 }
 
+export const MAX_FAVORITES = 12;
+
+/** A saved product template ("favorite"): name, category, unit, usual quantity and shelf life in days. @returns {Favorite|null} */
+export function validateFavorite(f) {
+  if (!f || typeof f !== "object") return null;
+  const name = String(f.name ?? "").trim().slice(0, 60);
+  const unit = LEGACY_UNITS[f.unit] || f.unit;
+  const quantity = Number(f.quantity ?? 1);
+  const rawDays = Math.round(Number(f.days ?? 7));
+  if (!name || !(unit in UNITS) || !isFinite(quantity) || quantity <= 0 || quantity > 9999) return null;
+  return {
+    id: Number(f.id) || Date.now() + Math.floor(Math.random() * 1000), name, unit,
+    category: CATEGORIES.includes(f.category) ? f.category : "other",
+    quantity: Math.round(quantity * 100) / 100,
+    days: Math.min(Math.max(isFinite(rawDays) ? rawDays : 7, 1), 365)
+  };
+}
+
 /** Defensive normalization of any stored/received state. @returns {State} */
 export function sanitizeState(raw) {
   const r = raw && typeof raw === "object" ? raw : {};
@@ -54,6 +73,9 @@ export function sanitizeState(raw) {
     shopping: list("shopping").filter(x => x && String(x.name ?? "").trim())
       .map(x => ({ id: Number(x.id) || Date.now(), name: String(x.name).trim().slice(0, 60), done: !!x.done })),
     history: list("history").filter(x => x && (x.type === "used" || x.type === "discarded") && String(x.name ?? ""))
-      .map(x => ({ name: String(x.name).slice(0, 60), type: x.type, date: String(x.date) }))
+      .map(x => ({ name: String(x.name).slice(0, 60), type: x.type, date: String(x.date) })),
+    favorites: list("favorites").map(validateFavorite).filter(Boolean)
+      .filter((f, i, a) => a.findIndex(g => g.name.toLowerCase() === f.name.toLowerCase() && g.unit === f.unit) === i)
+      .slice(0, MAX_FAVORITES)
   };
 }

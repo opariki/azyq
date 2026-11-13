@@ -1,1 +1,1 @@
-{"name":"azyq","version":"2.7.0","type":"module","scripts":{"start":"node server.js","test":"node --test *.test.js"}}
+{"name":"azyq","version":"2.8.0","type":"module","scripts":{"start":"node server.js","test":"node --test *.test.js"}}

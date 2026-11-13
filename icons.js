@@ -11,6 +11,9 @@ const P = {
   check: '<path d="m5 12.6 4.4 4.4L19 7.6"/>',
   circleCheck: '<circle cx="12" cy="12" r="8.5"/><path d="m8.4 12.3 2.6 2.6 4.6-5.2"/>',
   x: '<path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/>',
+  dashboard: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  users: '<circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19a5.5 5.5 0 0 1 11 0"/><circle cx="17.2" cy="9.5" r="2.4"/><path d="M16.5 14.2A4.6 4.6 0 0 1 21 18.5"/>',
+  globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17"/><path d="M12 3.5c2.4 2.4 3.6 5.2 3.6 8.5s-1.2 6.1-3.6 8.5c-2.4-2.4-3.6-5.2-3.6-8.5S9.6 5.9 12 3.5z"/>',
 };
 /** @param {string} name */
 export const icon = name =>
