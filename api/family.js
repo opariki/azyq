@@ -13,7 +13,7 @@ const normCode = c => String(c ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
 function clean(raw) {
   const r = raw && typeof raw === "object" ? raw : {};
   const cut = k => (Array.isArray(r[k]) ? r[k].slice(0, MAX_ITEMS) : []);
-  return sanitizeState({ products: cut("products"), shopping: cut("shopping"), history: cut("history") });
+  return sanitizeState({ products: cut("products"), shopping: cut("shopping"), history: cut("history"), favorites: cut("favorites") });
 }
 
 async function db(method, path, body, prefer) {
